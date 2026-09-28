@@ -1,0 +1,16 @@
+version = 1
+state_dir = "~/.local/state/agent-profile"
+
+[global]
+install_claude_rules = true
+install_skills = true
+install_claude_agents = false
+refresh_attached_projects = true
+
+[paths]
+common_instructions = "instructions/common.md"
+claude_instructions = "instructions/claude.md"
+codex_instructions = "instructions/codex.md"
+skills = "skills"
+claude_agents = "agents/claude"
+projects = "projects"

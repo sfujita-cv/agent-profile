@@ -1,0 +1,13 @@
+version = 1
+name = "agent-profile"
+root = "~/.config/agent-profile/current"
+priority = 90
+
+[instructions]
+common = "instructions/common.md"
+claude = "instructions/claude.md"
+codex = "instructions/codex.md"
+
+[skills]
+directory = "skills"
+duplicate_policy = "error"
