@@ -2,7 +2,7 @@
 
 ## 目的
 
-このリポジトリは Claude Code / Codex の個人共通設定と project-local overlay を安全に管理するためのテンプレートである。
+このリポジトリは Claude Code / Codex の個人共通設定（instructions、Skills、Claude subagents）を管理し、user scope へ安全に配布する public repository である。
 
 ## 言語
 
@@ -15,14 +15,14 @@
 - 既存ファイルを無条件に上書きしない。所有権を証明できないパスは conflict にする。
 - `rm -rf`、force push などの破壊的操作を自動化しない。
 - nanokit 管理ファイルを agent-profile 側から直接置換しない。
-- project-local 生成物は Git tracked file を上書きしない。
-- Docker/remote/worktree を考慮し、project-local overlay は絶対パス symlink に依存しない。
 - 変更後は `python3 -m unittest discover -s tests -v` を実行する。
 
 ## Skill
 
-Skill は `skills/<name>/SKILL.md` に置く。`name` とディレクトリ名を一致させ、description に発火条件を明記する。一般的な常識を長文で繰り返さず、再利用価値がある具体的なワークフローだけを置く。
+Skill は `skills/<name>/SKILL.md` に置く。`name` とディレクトリ名を一致させ、description に発火条件を明記する。nanokit に同名の Skill がある場合、中身がほぼ同じなら取り込まず nanokit 版を使い、中身が別物なら別名に改名して取り込む。
 
 ## 変更範囲
 
-プロジェクト固有の GPU、Docker、Pixi、E2E、デプロイ手順をこのリポジトリへ吸い上げない。それらは対象リポジトリの `CLAUDE.md` / `AGENTS.md` / project Skill が所有する。
+- プロジェクトごとに設定を切り替える仕組み（project overlay、`CLAUDE.local.md` / `AGENTS.override.md` の生成など）は持たない。
+- 既存リポジトリの `CLAUDE.md` や Skill を参考にしてよいが、取り込むのは複数リポジトリに通用する統合版だけにする。特定のリポジトリ名、そのリポジトリにしか無いコマンド・環境変数・path・データ名・実験名は書かない。リポジトリ間で違う記述は、リポジトリ名を付けて併記せず、一般化して 1 つにまとめる。
+- public repository なので、API token、認証情報、private key などの秘密情報は置かない。

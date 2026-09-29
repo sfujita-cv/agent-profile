@@ -17,7 +17,7 @@ Claude 共通指示は `~/.claude/rules/90-agent-profile-common.md` などへ追
 
 nanokit が overlay provider を実装した後は、live user config の writer を nanokit 1つへ寄せる。
 
-`90-agent-profile.toml.example` はその契約案であり、現行 nanokit が自動で読むことを前提にしない。
+`90-agent-profile.toml.example` はその契約案であり、現行 nanokit が自動で読むことを前提にしない。`root` に書く `~/.config/agent-profile/current` は、`agent-sync` が clone 先への symlink として張る stable path である。
 
 Provider の基本規則:
 
