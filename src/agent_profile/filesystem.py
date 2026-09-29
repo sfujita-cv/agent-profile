@@ -7,10 +7,6 @@ from pathlib import Path
 from typing import Any
 
 
-def expand(path: str | Path) -> Path:
-    return Path(path).expanduser().resolve(strict=False)
-
-
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -19,9 +15,9 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def sha256_tree(path: Path) -> str:
+def sha256_tree(path: Path, ignore: frozenset[str] = frozenset()) -> str:
     digest = hashlib.sha256()
-    for item in sorted(p for p in path.rglob("*") if p.is_file()):
+    for item in sorted(p for p in path.rglob("*") if p.is_file() and p.name not in ignore):
         digest.update(item.relative_to(path).as_posix().encode("utf-8"))
         digest.update(b"\0")
         digest.update(item.read_bytes())
@@ -29,7 +25,12 @@ def sha256_tree(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_path(path: Path, ignore: frozenset[str] = frozenset()) -> str:
+    return sha256_tree(path, ignore) if path.is_dir() else sha256_file(path)
+
+
 def atomic_write_text(path: Path, content: str) -> None:
+    # Write to a sibling temp file and rename so readers (Claude/Codex) never see a partial file.
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.tmp-{os.getpid()}")
     tmp.write_text(content, encoding="utf-8")
@@ -53,26 +54,14 @@ def is_same_symlink(destination: Path, source: Path) -> bool:
 
 
 def has_symlink_parent(path: Path, stop: Path) -> bool:
-    current = path.parent
-    stop = stop.resolve(strict=False)
-    while True:
-        if current.is_symlink():
-            return True
-        if current == stop or current.parent == current:
+    """Return True if any ancestor of ``path`` below ``stop`` is a symlink.
+
+    A symlinked parent such as ``~/.claude/skills -> ~/nanokit/...`` means writing
+    into it would modify another tool's repository.
+    """
+    for parent in path.parents:
+        if parent == stop:
             return False
-        current = current.parent
-
-
-def merge_json(existing: Any, desired: Any) -> Any:
-    if isinstance(existing, dict) and isinstance(desired, dict):
-        merged = dict(existing)
-        for key, value in desired.items():
-            merged[key] = merge_json(merged[key], value) if key in merged else value
-        return merged
-    if isinstance(existing, list) and isinstance(desired, list):
-        merged = list(existing)
-        for value in desired:
-            if value not in merged:
-                merged.append(value)
-        return merged
-    return desired
+        if parent.is_symlink():
+            return True
+    return False
