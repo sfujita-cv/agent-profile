@@ -1,29 +1,92 @@
 ---
 name: code-review-etiquette
-description: Produce focused, actionable code-review feedback for diffs, pull requests, or implementation changes. Use when reviewing code and deciding which findings are blocking, important, optional, or merely stylistic, with emphasis on evidence, impact, and minimal corrective action.
+description: Use this skill when reviewing others' code, writing review comments, or responding to code review feedback. Covers actionable comments, question-over-demand style, blocking vs nit distinction, and acknowledging good choices.
+user-invocable: false
 ---
 
-# Code review etiquette
+# Code Review Etiquette: レビューの作法
 
-## Review order
+> 出典: [MIT Missing Semester 2026 - Beyond the Code](https://missing.csail.mit.edu/2026/beyond-code/)
 
-1. Correctness and regressions.
-2. Data loss, security, concurrency, resource, and compatibility risks.
-3. Missing validation or tests for changed behavior.
-4. Maintainability issues that create concrete future failure modes.
-5. Style only when it conflicts with repository conventions or obscures correctness.
+## レビューの見る順番
 
-## Finding format
+1. 正しさと regression。仕様に対する過不足。
+2. データ消失、セキュリティ、並行性、リソース、public API / CLI / 設定 / 出力形式の互換性。
+3. 変更した挙動に対するテスト・検証の不足。
+4. 将来の具体的な故障につながる保守性の問題。
+5. スタイル。リポジトリ規約に反するか、正しさを読みにくくしている場合だけ。
 
-For each material finding, include:
+レビュー対象の diff を中心に見る。diff と無関係な既存問題を大量に列挙しない。リポジトリ固有のレビュー観点（設計書の MUST / 禁止事項など）が `CLAUDE.md` にあれば、それも必ず確認する。
 
-- severity or urgency;
-- the concrete code path or condition that triggers it;
-- why it matters to users, callers, data, performance, or operations;
-- the smallest practical correction.
+## レビューコメントの書き方
 
-Prefer a question when repository intent is ambiguous instead of asserting a defect without evidence. Distinguish blocking findings from non-blocking suggestions. Do not flood the review with low-value nits that hide important issues.
+### 1. アクショナブルなコメントを書く
 
-Acknowledge sound design choices when they materially reduce risk, but keep the review centered on actionable information.
+```
+# Bad
+グローバル変数を使わないで
 
-If no material issue is found, say so and state what was and was not validated.
+# Good
+このグローバル変数を Config dataclass に置き換えられませんか？
+そうすればテストを並列実行できるようになります。
+```
+
+「何がダメか」だけでなく「代わりにどうするか」と「なぜそうすべきか」を含める。
+
+### 2. 命令ではなく質問で書く
+
+```
+# Bad
+null ケースをハンドルしろ
+
+# Good
+ここに null が渡された場合、どうなりますか？
+```
+
+同じ内容でも、質問形は対話を促し、命令形は防御的な反応を引き起こす。著者が意図的にその設計を選んだ場合、質問形なら理由を説明してもらえる。
+
+### 3. 理由（Why）を説明する
+
+```
+# Bad
+この定数はハードコードしないで
+
+# Good
+この値を環境変数にすると、ステージング環境と本番環境で
+異なるタイムアウトを使い分けられます。
+```
+
+指摘の背景にある動機を共有する。レビュイーにはその文脈がない場合が多い。
+
+### 4. blocking と nit を区別する
+
+- **blocking**: これが修正されないとマージできない
+- **nit**: 好みの問題、改善提案。修正しなくても可
+
+```
+nit: 変数名は users_count より user_count が慣例に合います
+
+blocking: この SQL クエリはユーザー入力を直接埋め込んでおり、
+SQL インジェクションの脆弱性があります。プレースホルダーを使ってください。
+```
+
+`nit:` プレフィックスを使うことで、レビュイーがトリアージ（優先順位付け）できる。
+
+### 5. 良い点も指摘する
+
+```
+このエラーハンドリングのアプローチ、とてもきれいですね。
+再利用しやすい形になっていて参考になります。
+```
+
+レビューコメントが指摘ばかりだとバランスが悪い。良い設計判断も明示する。
+
+### 6. コメントの量を制御する
+
+- 同じパターンの繰り返しは1箇所だけ指摘し「他の箇所も同様にお願いします」と書く
+- 100件コメントしても、半分は最初の50件を修正すれば無効になる
+- 量が多いと重要な指摘が埋もれる
+
+### 7. 指摘がないとき
+
+重大な問題が見つからなければそう書き、何を確認し何を確認していないか（実行した検証、読んでいない範囲）を書く。

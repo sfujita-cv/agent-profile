@@ -1,0 +1,660 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root {
+    --ground: #eef2f3;
+    --surface: #ffffff;
+    --surface-sunken: #e6ecee;
+    --ink: #111a1f;
+    --ink-soft: #3c4b53;
+    --muted: #5c6b73;
+    --line: #d5dee1;
+    --line-strong: #b9c7cc;
+    --accent: #0d6e75;
+    --accent-ink: #085157;
+    --accent-soft: #dceded;
+    --ok: #2f7d52;
+    --ok-soft: #dcefe3;
+    --warn: #8a5a12;
+    --warn-soft: #f5e9d5;
+    --idle: #5c6b73;
+    --idle-soft: #e2e8ea;
+
+    --display: 'Archivo', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+    --body: 'Noto Sans JP', 'Archivo', system-ui, -apple-system, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1216; --surface: #141d22; --surface-sunken: #101820;
+      --ink: #e7eef0; --ink-soft: #c3d0d4; --muted: #93a3aa;
+      --line: #24323a; --line-strong: #33454e;
+      --accent: #58bec3; --accent-ink: #8ad8dc; --accent-soft: #123338;
+      --ok: #62bd8b; --ok-soft: #153023;
+      --warn: #d0a45f; --warn-soft: #302516;
+      --idle: #93a3aa; --idle-soft: #1b262c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0c1216; --surface: #141d22; --surface-sunken: #101820;
+    --ink: #e7eef0; --ink-soft: #c3d0d4; --muted: #93a3aa;
+    --line: #24323a; --line-strong: #33454e;
+    --accent: #58bec3; --accent-ink: #8ad8dc; --accent-soft: #123338;
+    --ok: #62bd8b; --ok-soft: #153023;
+    --warn: #d0a45f; --warn-soft: #302516;
+    --idle: #93a3aa; --idle-soft: #1b262c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 46px;
+  }
+
+  /* ---------- header ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 18px; }
+  .eyebrow {
+    font-family: var(--display); font-size: 11px; font-weight: 600;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-family: var(--display); font-size: clamp(28px, 5vw, 40px); font-weight: 700;
+    line-height: 1.18; letter-spacing: -.015em; margin: 0; text-wrap: balance;
+  }
+  .standfirst { margin: 0; max-width: 62ch; color: var(--ink-soft); font-size: 16px; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px; padding-top: 14px;
+    border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+  }
+  .meta span b { color: var(--ink-soft); font-weight: 500; }
+
+  /* ---------- milestone rail ---------- */
+  .rail { display: flex; flex-direction: column; gap: 12px; }
+  .rail-track { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+  .ms {
+    display: flex; flex-direction: column; gap: 6px; padding: 10px 8px 12px;
+    border-radius: 3px; background: var(--idle-soft); border-top: 3px solid var(--line-strong);
+  }
+  .ms b { font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+  .ms span { font-size: 11px; line-height: 1.35; color: var(--muted); }
+  .ms.done { background: var(--ok-soft); border-top-color: var(--ok); }
+  .ms.done b, .ms.done span { color: var(--ok); }
+  .ms.next { background: var(--accent-soft); border-top-color: var(--accent); }
+  .ms.next b, .ms.next span { color: var(--accent-ink); }
+  .rail-note { font-size: 13px; color: var(--muted); margin: 0; }
+
+  /* ---------- state chips ---------- */
+  .state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .state {
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
+    border-radius: 2px; padding: 16px 18px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .state.pass { border-left-color: var(--ok); }
+  .state.hold { border-left-color: var(--idle); }
+  .state h3 { margin: 0; font-family: var(--display); font-size: 14px; font-weight: 600; }
+  .state p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .tag {
+    align-self: flex-start; font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: .04em; padding: 2px 8px; border-radius: 2px;
+  }
+  .tag.pass { background: var(--ok-soft); color: var(--ok); }
+  .tag.hold { background: var(--idle-soft); color: var(--idle); }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 16px; }
+  h2 {
+    font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: -.005em;
+    margin: 0; padding-bottom: 10px; border-bottom: 2px solid var(--ink); text-wrap: balance;
+  }
+  h3.sub { font-family: var(--display); font-size: 15px; font-weight: 600; margin: 6px 0 -4px; }
+  p { margin: 0; max-width: 68ch; }
+  a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  code {
+    font-family: var(--mono); font-size: .88em; background: var(--surface-sunken);
+    padding: 1px 5px; border-radius: 2px; word-break: break-word;
+  }
+
+  /* ---------- figures ---------- */
+  figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  figure img {
+    width: 100%; max-width: 100%; display: block; border: 1px solid var(--line);
+    border-radius: 2px; background: #fff;
+  }
+  figcaption { font-size: 13px; color: var(--muted); line-height: 1.68; max-width: 72ch; }
+  figcaption b { color: var(--ink-soft); font-weight: 500; }
+
+  .views { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+  .views img { border-radius: 2px; border: 1px solid var(--line); width: 100%; display: block; }
+
+  /* ---------- tables ---------- */
+  /* 表は必ずどちらかの class で包む (スマホ幅で本文ごと横に流れないように)。両方の名前を受ける */
+  .scroll, .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%;
+    border: 1px solid var(--line); border-radius: 2px; background: var(--surface); margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 11px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  thead th {
+    font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted); background: var(--surface-sunken); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.path { font-family: var(--mono); font-size: 12px; color: var(--muted); word-break: break-all; }
+  td b { font-weight: 500; }
+  .good { color: var(--ok); font-weight: 500; }
+
+  /* ---------- viewer ---------- */
+  .viewer { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .viewer-stage { position: relative; background: #070c0f; aspect-ratio: 16 / 10; width: 100%; }
+  .viewer-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .viewer-hud {
+    position: absolute; left: 12px; top: 12px; font-family: var(--mono); font-size: 11.5px;
+    color: #9fd8db; background: rgba(4, 12, 15, .68); padding: 6px 10px; border-radius: 2px;
+    line-height: 1.6; pointer-events: none; max-width: calc(100% - 24px);
+  }
+  .viewer-hint {
+    position: absolute; right: 12px; bottom: 12px; font-size: 11.5px; color: #7b969b;
+    background: rgba(4, 12, 15, .68); padding: 5px 9px; border-radius: 2px; pointer-events: none;
+  }
+  .viewer-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+    padding: 12px 14px; background: var(--surface); border-top: 1px solid var(--line);
+  }
+  .cloudpick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .viewer-bar button {
+    font-family: var(--display); font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+    background: var(--surface-sunken); border: 1px solid var(--line); border-radius: 2px;
+    padding: 6px 11px; cursor: pointer;
+  }
+  .viewer-bar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .viewer-bar label { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .viewer-bar input[type="range"] { width: 104px; accent-color: var(--accent); }
+  .viewer-bar input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  /* ---------- callout ---------- */
+  .callout {
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--warn);
+    border-radius: 2px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .callout h3 { margin: 0; font-family: var(--display); font-size: 14px; font-weight: 600; color: var(--warn); }
+  .callout p { font-size: 14px; color: var(--ink-soft); }
+
+  pre {
+    margin: 0; background: var(--surface-sunken); border: 1px solid var(--line); border-radius: 2px;
+    padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px;
+    line-height: 1.72; color: var(--ink-soft); tab-size: 2;
+  }
+  pre .c { color: var(--muted); }
+
+  ul { margin: 0; padding-left: 1.25em; display: flex; flex-direction: column; gap: 7px; max-width: 68ch; }
+  li::marker { color: var(--accent); }
+
+  footer {
+    border-top: 1px solid var(--line); padding-top: 18px; font-family: var(--mono);
+    font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 20px;
+  }
+
+  @media (max-width: 620px) {
+    .rail-track { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .page { gap: 38px; padding-block: 28px 56px; }
+    .viewer-stage { aspect-ratio: 4 / 3; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 22px; height: 0; border-top: 2px solid currentColor; margin-right: 6px; vertical-align: middle; }
+  .legend .known { color: #2fb5bb; }
+  .legend .pred { color: #ef8a4a; }
+  .legend .pred::before { border-top-style: dashed; }
+
+  /* ---------- 画像の拡大表示 (lightbox) ----------
+     図は matplotlib の密な PNG なので、本文幅では読めない。図をタップ / クリックすると
+     全画面で開き、もう一度押すと等倍 (スクロールで移動) に切り替わる。 */
+  figure img, .views img { cursor: zoom-in; }
+  .lightbox {
+    position: fixed; inset: 0; z-index: 9999; display: none;
+    background: rgb(8, 12, 14); overscroll-behavior: contain;     /* 本文を透かさない */
+  }
+  .lightbox[aria-hidden="false"] { display: block; }
+  .lightbox-scroll {
+    position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch;
+    display: flex; align-items: center; justify-content: center;
+    padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+  }
+  .lightbox img {
+    display: block; margin: auto; background: #fff; border-radius: 4px;
+    max-width: 100%; max-height: 100%; min-width: 0; min-height: 0;   /* flex item でも画面内に縮む */
+    width: auto; height: auto; object-fit: contain; cursor: zoom-in;
+  }
+  .lightbox.is-actual .lightbox-scroll { display: block; }
+  .lightbox.is-actual img { max-width: none; max-height: none; width: auto; cursor: zoom-out; }
+  .lightbox-bar {
+    position: absolute; top: 0; left: 0; right: 0; display: flex; gap: 10px; align-items: center;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+    background: linear-gradient(rgba(8,12,14,0.85), rgba(8,12,14,0));
+    color: #e7eef0; font-size: 12.5px; pointer-events: none;
+  }
+  .lightbox-bar .caption { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lightbox-bar button {
+    pointer-events: auto; font: inherit; color: #e7eef0; background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.26); border-radius: 3px; padding: 4px 10px; cursor: pointer;
+  }
+  .lightbox-bar button:hover { background: rgba(255,255,255,0.24); }
+  @media (max-width: 640px) { .lightbox-bar .hint { display: none; } }
+</style>
+
+<div class="page">
+{{BODY}}
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var META_URL = "assets/clouds/meta.json";
+  var stage = document.getElementById("stage");
+  var hud = document.getElementById("hud");
+  var pick = document.getElementById("cloudpick");
+  var psize = document.getElementById("psize");
+  var showcams = document.getElementById("showcams");
+  var showpred = document.getElementById("showpred");
+  var resetBtn = document.getElementById("resetview");
+  if (!stage) return;                  // 3D ビューワを置かない report (図と表だけ) では何もしない
+
+  if (typeof THREE === "undefined") {
+    hud.textContent = "three.js を読み込めませんでした（図は上のとおりです）";
+    return;
+  }
+
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x070c0f, 1);
+  stage.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(45, 16 / 10, 0.01, 100);
+  var cloudGroup = new THREE.Group();
+  var camGroup = new THREE.Group();
+  var predGroup = new THREE.Group();
+  scene.add(cloudGroup);
+  scene.add(camGroup);
+  scene.add(predGroup);
+
+  // --- orbit state (自前。three.js の OrbitControls は cdnjs の UMD build に含まれない) ---
+  var orbit = { theta: 0.9, phi: 1.15, radius: 2.4, target: new THREE.Vector3(0, 0, 0) };
+  var home = Object.assign({}, orbit, { target: new THREE.Vector3(0, 0, 0) });
+
+  function applyCamera() {
+    var r = orbit.radius, p = Math.max(0.05, Math.min(Math.PI - 0.05, orbit.phi));
+    orbit.phi = p;
+    camera.position.set(
+      orbit.target.x + r * Math.sin(p) * Math.sin(orbit.theta),
+      orbit.target.y + r * Math.cos(p),
+      orbit.target.z + r * Math.sin(p) * Math.cos(orbit.theta)
+    );
+    camera.lookAt(orbit.target);
+  }
+
+  var pointers = new Map();
+  var last = null, mode = 0, pinch = 0;
+
+  stage.addEventListener("pointerdown", function (e) {
+    stage.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    last = { x: e.clientX, y: e.clientY };
+    mode = (e.button === 2 || e.shiftKey) ? 2 : 1;
+    if (pointers.size === 2) {
+      var pts = Array.from(pointers.values());
+      pinch = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    }
+  });
+  stage.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  stage.addEventListener("pointermove", function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      var pts = Array.from(pointers.values());
+      var d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (pinch > 0) orbit.radius = Math.max(0.15, Math.min(12, orbit.radius * (pinch / d)));
+      pinch = d;
+      applyCamera();
+      return;
+    }
+    if (!last) return;
+    var dx = e.clientX - last.x, dy = e.clientY - last.y;
+    last = { x: e.clientX, y: e.clientY };
+    if (mode === 2) {
+      var right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+      var up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+      var k = orbit.radius * 0.0016;
+      orbit.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+    } else {
+      orbit.theta -= dx * 0.006;
+      orbit.phi -= dy * 0.006;
+    }
+    applyCamera();
+  });
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = 0;
+    if (pointers.size === 0) last = null;
+  }
+  stage.addEventListener("pointerup", endPointer);
+  stage.addEventListener("pointercancel", endPointer);
+  stage.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    orbit.radius = Math.max(0.15, Math.min(12, orbit.radius * Math.exp(e.deltaY * 0.0011)));
+    applyCamera();
+  }, { passive: false });
+
+  function resize() {
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", resize);
+
+  // viewer が画面外にあるとき・図の拡大表示中は描画しない。30 万点を毎フレーム描き続けると、
+  // スマホで電池を食い、スクロールや拡大表示の操作まで重くなる。
+  var onScreen = true;
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; }).observe(stage);
+  }
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!onScreen) return;
+    var lb = document.querySelector(".lightbox");
+    if (lb && lb.getAttribute("aria-hidden") === "false") return;
+    renderer.render(scene, camera);
+  }
+
+  // --- data ---
+  var META = null, CURRENT = null, LOADED = {};
+
+  function clearGroup(g) {
+    while (g.children.length) {
+      var c = g.children.pop();
+      if (c.geometry) c.geometry.dispose();
+      if (c.material) c.material.dispose();
+    }
+  }
+
+  // bbox を単位立方体へ写す変換。camera 錐体も同じ変換を使う。
+  function normalizer(info) {
+    var mn = info.min, mx = info.max;
+    var c = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
+    var extent = Math.max(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) || 1;
+    return { center: c, scale: 1 / extent };
+  }
+
+  // 全 cloud 共通の正規化範囲。meta.scene_bbox があればそれを、無ければ全 cloud の bbox の和を使う
+  // (以前は scene_bbox を暗黙の必須 key にしていて、書かない report で undefined.min になっていた)。
+  function sceneBbox() {
+    var sb = META.scene_bbox;
+    if (sb && sb.min && sb.max) return sb;
+    var mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    Object.keys(META.clouds || {}).forEach(function (k) {
+      var c = META.clouds[k];
+      if (!c || !c.min || !c.max) return;
+      for (var j = 0; j < 3; j++) { mn[j] = Math.min(mn[j], c.min[j]); mx[j] = Math.max(mx[j], c.max[j]); }
+    });
+    return { min: mn, max: mx };
+  }
+
+  function buildCloud(info, buffer) {
+    var n = info.count;
+    var quant = new Uint16Array(buffer, 0, n * 3);
+    var cols = new Uint8Array(buffer, n * 6, n * 3);
+    var norm = normalizer(sceneBbox());          // 全 cloud と錐体で共通 (episode 座標)
+    var pos = new Float32Array(n * 3);
+    var sx = (info.max[0] - info.min[0]) / 65535, sy = (info.max[1] - info.min[1]) / 65535,
+        sz = (info.max[2] - info.min[2]) / 65535;
+    for (var i = 0; i < n; i++) {
+      pos[i * 3] = (info.min[0] + quant[i * 3] * sx - norm.center[0]) * norm.scale;
+      // OpenCV は y 下向き。見やすさのため viewer だけ y を反転する。
+      pos[i * 3 + 1] = -(info.min[1] + quant[i * 3 + 1] * sy - norm.center[1]) * norm.scale;
+      pos[i * 3 + 2] = (info.min[2] + quant[i * 3 + 2] * sz - norm.center[2]) * norm.scale;
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(cols, 3, true));
+    var mat = new THREE.PointsMaterial({
+      size: Number(psize.value) * 0.0016, vertexColors: true, sizeAttenuation: true
+    });
+    return { points: new THREE.Points(geo, mat), norm: norm };
+  }
+
+  function buildFrusta(group, cams, norm, material) {
+    clearGroup(group);
+    if (!cams) return;
+    var depth = 0.12;
+    var verts = [];
+    cams.forEach(function (cam) {
+      var K = cam.K, T = cam.T_cw, h = cam.hw[0], w = cam.hw[1];
+      var R = [[T[0][0], T[0][1], T[0][2]], [T[1][0], T[1][1], T[1][2]], [T[2][0], T[2][1], T[2][2]]];
+      var t = [T[0][3], T[1][3], T[2][3]];
+      function toWorld(p) {                      // X = R^T (p - t)
+        var d = [p[0] - t[0], p[1] - t[1], p[2] - t[2]];
+        var x = R[0][0] * d[0] + R[1][0] * d[1] + R[2][0] * d[2];
+        var y = R[0][1] * d[0] + R[1][1] * d[1] + R[2][1] * d[2];
+        var z = R[0][2] * d[0] + R[1][2] * d[1] + R[2][2] * d[2];
+        return [(x - norm.center[0]) * norm.scale,
+                -(y - norm.center[1]) * norm.scale,
+                (z - norm.center[2]) * norm.scale];
+      }
+      var d = depth / norm.scale;
+      var centre = toWorld([0, 0, 0]);
+      var corners = [[0, 0], [w, 0], [w, h], [0, h]].map(function (uv) {
+        return toWorld([(uv[0] - K[0][2]) / K[0][0] * d, (uv[1] - K[1][2]) / K[1][1] * d, d]);
+      });
+      corners.forEach(function (c) { verts.push(centre[0], centre[1], centre[2], c[0], c[1], c[2]); });
+      for (var i = 0; i < 4; i++) {
+        var a = corners[i], b = corners[(i + 1) % 4];
+        verts.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+      }
+    });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(verts), 3));
+    var lines = new THREE.LineSegments(geo, material);
+    if (material.isLineDashedMaterial) lines.computeLineDistances();
+    group.add(lines);
+  }
+  function buildCameras(norm) {
+    buildFrusta(camGroup, META.cameras, norm, new THREE.LineBasicMaterial({ color: 0x2fb5bb }));
+    buildFrusta(predGroup, META.cameras_pred_aligned, norm,
+                new THREE.LineDashedMaterial({ color: 0xef8a4a, dashSize: 0.02, gapSize: 0.012 }));
+    camGroup.visible = showcams.checked;
+    predGroup.visible = showpred.checked;
+  }
+
+  function setHud(info, extra) {
+    var hasPred = Array.isArray(META.cameras_pred_aligned) && META.cameras_pred_aligned.length > 0;
+    var frame = (info.frame || META.frame || "episode") + " 座標";
+    var cams = hasPred ? "（実線: 既知 camera、破線: 整列した予測 camera）"
+                       : (Array.isArray(META.cameras) && META.cameras.length ? "（実線: support camera）" : "");
+    hud.innerHTML = "<b>" + ((info.label || "") + "</b><br>") +
+      Number(info.count || 0).toLocaleString() + " points ・ " + frame + cams +
+      (extra ? "<br>" + extra : "");
+  }
+
+  function show(name) {
+    var info = META.clouds && META.clouds[name];
+    if (!info) {                       // 名前の取り違えを静かに落とさない
+      hud.textContent = "点群 \"" + name + "\" が meta.json にありません（候補: " +
+        Object.keys(META.clouds || {}).join(", ") + "）。";
+      return;
+    }
+    CURRENT = name;
+    Array.prototype.forEach.call(pick.children, function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.name === name));
+    });
+    clearGroup(cloudGroup);
+    if (LOADED[name]) {
+      cloudGroup.add(LOADED[name].points);
+      buildCameras(LOADED[name].norm);
+      setHud(info);
+      return;
+    }
+    setHud(info, "読み込み中…");
+    fetch("assets/clouds/" + info.file)
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function (b64) {
+        // Artifact は .bin を配信しないため base64 text で受け取る。PNG へ詰めると
+        // browser の color management が byte を書き換えて幾何が静かに壊れうる。
+        var bin = atob(b64.trim());
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        var buf = bytes.buffer;
+        LOADED[name] = buildCloud(info, buf);
+        if (CURRENT !== name) return;
+        cloudGroup.add(LOADED[name].points);
+        buildCameras(LOADED[name].norm);
+        setHud(info);
+      })
+      .catch(function (err) {
+        setHud(info, "点群を読み込めませんでした（" + err.message + "）。" +
+          "ローカルの file:// では fetch が使えないため、公開 URL で開いてください。");
+      });
+  }
+
+  psize.addEventListener("input", function () {
+    Object.keys(LOADED).forEach(function (k) {
+      LOADED[k].points.material.size = Number(psize.value) * 0.0016;
+    });
+  });
+  showcams.addEventListener("change", function () { camGroup.visible = showcams.checked; });
+  showpred.addEventListener("change", function () { predGroup.visible = showpred.checked; });
+  function syncPredControl() {
+    var hasPred = Array.isArray(META.cameras_pred_aligned) && META.cameras_pred_aligned.length > 0;
+    var label = showpred.closest ? showpred.closest("label") : null;
+    if (label) label.style.display = hasPred ? "" : "none";   // 無い camera の toggle を出さない
+  }
+  resetBtn.addEventListener("click", function () {
+    orbit.theta = home.theta; orbit.phi = home.phi; orbit.radius = home.radius;
+    orbit.target.set(0, 0, 0);
+    applyCamera();
+  });
+
+  fetch(META_URL)
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (meta) {
+      META = meta;
+      var names = Object.keys(meta.clouds || {});
+      if (!names.length) throw new Error("meta.clouds が空です");
+      // 最初に表示する点群は meta から決める。名前を JS に固定しない
+      // (report ごとに点群名が違うので、固定すると別 report で undefined になる)。
+      var first = names.indexOf("all") >= 0 ? "all" : names[0];
+      names.forEach(function (name) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.dataset.name = name;
+        b.textContent = (meta.clouds[name] && meta.clouds[name].label) || name;
+        b.setAttribute("aria-pressed", String(name === first));
+        b.addEventListener("click", function () { show(name); });
+        pick.appendChild(b);
+      });
+      syncPredControl();
+      show(first);
+    })
+    .catch(function (err) {
+      hud.textContent = "点群 metadata を読み込めませんでした（" + err.message +
+        "）。公開 URL で開くと表示されます。";
+    });
+
+  resize();
+  applyCamera();
+  loop();
+})();
+</script>
+
+<script>
+/* 図の拡大表示。すべての figure / .views の img を対象にするので、
+   report ごとに class を付け忘れても効く。1 回目のタップで全画面、2 回目で等倍。 */
+(function () {
+  "use strict";
+  var imgs = Array.prototype.slice.call(document.querySelectorAll("figure img, .views img"));
+  if (!imgs.length) return;
+  var box = document.createElement("div");
+  box.className = "lightbox";
+  box.setAttribute("aria-hidden", "true");
+  box.setAttribute("role", "dialog");
+  box.innerHTML =
+    '<div class="lightbox-scroll"><img alt=""></div>' +
+    '<div class="lightbox-bar"><span class="caption"></span>' +
+    '<span class="hint">クリックで等倍 / 縮小 ・ Esc で閉じる</span>' +
+    '<button type="button" data-act="zoom">等倍</button>' +
+    '<button type="button" data-act="close">閉じる</button></div>';
+  document.body.appendChild(box);
+  var big = box.querySelector("img");
+  var cap = box.querySelector(".caption");
+  var zoomBtn = box.querySelector('[data-act="zoom"]');
+  var scroller = box.querySelector(".lightbox-scroll");
+  var lastFocus = null;
+
+  function setActual(on) {
+    box.classList.toggle("is-actual", !!on);
+    zoomBtn.textContent = on ? "全体表示" : "等倍";
+    if (on) {                                   // 等倍にしたら中央から見せる
+      scroller.scrollLeft = (scroller.scrollWidth - scroller.clientWidth) / 2;
+      scroller.scrollTop = (scroller.scrollHeight - scroller.clientHeight) / 2;
+    }
+  }
+  function open(img) {
+    lastFocus = document.activeElement;
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt || "";
+    var fig = img.closest ? img.closest("figure") : null;
+    var figcap = fig ? fig.querySelector("figcaption") : null;
+    cap.textContent = img.alt || (figcap ? figcap.textContent.slice(0, 120) : "");
+    setActual(false);
+    box.setAttribute("aria-hidden", "false");
+    document.documentElement.style.overflow = "hidden";
+    zoomBtn.focus();
+  }
+  function close() {
+    box.setAttribute("aria-hidden", "true");
+    document.documentElement.style.overflow = "";
+    big.removeAttribute("src");
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  imgs.forEach(function (img) {
+    img.addEventListener("click", function () { open(img); });
+    img.setAttribute("tabindex", "0");
+    img.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(img); }
+    });
+  });
+  big.addEventListener("click", function (e) { e.stopPropagation(); setActual(!box.classList.contains("is-actual")); });
+  box.addEventListener("click", function (e) {
+    var act = e.target && e.target.getAttribute && e.target.getAttribute("data-act");
+    if (act === "zoom") { setActual(!box.classList.contains("is-actual")); return; }
+    close();                                     // 背景 / 閉じるボタン
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && box.getAttribute("aria-hidden") === "false") close();
+  });
+})();
+</script>
